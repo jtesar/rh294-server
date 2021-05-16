@@ -1,0 +1,46 @@
+#!/bin/bash
+echo Removing all containers
+sudo podman container rm -fa > /dev/null
+
+if [ X$1 = X ]; then
+  nr=4
+else
+  nr=$1
+fi
+
+echo -n > hosts
+echo "127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4" >> hosts
+echo "::1         localhost localhost.localdomain localhost6 localhost6.localdomain6" >> hosts
+
+for i in $(seq 1 $nr); do
+	host=server$i
+	hostcname=s$i
+	echo Staring $host
+	sudo podman run -d --rm --name $host --hostname=$host rh294-server > /dev/null
+        ip=$(sudo podman inspect --format "{{ .NetworkSettings.IPAddress }}" $host)
+        echo "$ip $host $hostcname" >> hosts
+done
+
+
+if ! [ -d data ]; then
+	mkdir data
+	chcon -t container_file_t data
+fi
+
+echo Staring workstation
+sudo podman run -d --name workstation --rm -v ./data:/home/devops --hostname=workstation rh294-server > /dev/null
+sleep 3
+
+echo -n Copying /etc/hosts\ 
+
+sudo podman container cp hosts workstation:/etc/hosts
+echo -n .
+for i in $(seq 1 $nr); do
+    host=server$i
+    sudo podman container cp hosts $host:/etc/hosts
+echo -n .
+done
+
+echo done
+
+rm -f hosts

@@ -1,0 +1,4 @@
+#!/bin/bash
+echo -n Removing containers\ 
+sudo podman container rm -fa > /dev/null
+echo done

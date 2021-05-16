@@ -1,0 +1,7 @@
+#!/bin/bash
+
+sudo podman pull quay.io/jirka_tesar/rh294-server
+echo sudo podman exec -it workstation su - devops > workstation
+chmod +x workstation
+mkdir data
+sudo chcon -t container_file_t data
